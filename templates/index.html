@@ -34,6 +34,12 @@
     <div id="content">
         <h1>Upload an Image for Prediction</h1>
         <form id="predictionForm" enctype="multipart/form-data">
+            <label for="model">Choose a model:</label>
+            <select name="model" id="model">
+                <option value="mnist_model">MNIST Model (28x28 grayscale)</option>
+                <option value="vgg_model">VGG-like Model (32x32 color)</option>
+            </select>
+            <br><br>
             <input type="file" name="file" id="fileInput" accept="image/*" required>
             <button type="submit">Predict</button>
         </form>
@@ -44,9 +50,11 @@
         document.getElementById('predictionForm').addEventListener('submit', function(event) {
             event.preventDefault();
             const fileInput = document.getElementById('fileInput');
+            const modelSelect = document.getElementById('model');
             const resultDiv = document.getElementById('predictionResult');
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
+            formData.append('model', modelSelect.value);
 
             resultDiv.textContent = 'Predicting...';
 
