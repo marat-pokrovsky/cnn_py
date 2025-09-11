@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CNN Digit Recognition Game</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 40px;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        #content {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        canvas {
+            border: 1px solid black;
+            cursor: crosshair;
+        }
+        #predictionResult {
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div id="content">
+        <h1>Draw a Digit (0-9)</h1>
+        <canvas id="drawingCanvas" width="280" height="280"></canvas>
+        <br>
+        <button id="predictButton">Predict</button>
+        <button id="clearButton">Clear</button>
+        <div id="predictionResult"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+
+        // --- Canvas Drawing Logic ---
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 20;
+        ctx.lineCap = 'round';
+
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            ctx.beginPath();
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseleave', stopDrawing);
+
+        // --- Button Logic ---
+        document.getElementById('clearButton').addEventListener('click', () => {
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('predictionResult').textContent = "";
+        });
+
+        document.getElementById('predictButton').addEventListener('click', () => {
+            const resultDiv = document.getElementById('predictionResult');
+            resultDiv.textContent = 'Predicting...';
+
+            canvas.toBlob((blob) => {
+                const formData = new FormData();
+                formData.append('file', blob, 'digit.png');
+
+                fetch('/predict_game', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.predicted_class) {
+                        resultDiv.textContent = 'Predicted Class: ' + data.predicted_class;
+                    } else {
+                        resultDiv.textContent = 'Error: ' + data.error;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    resultDiv.textContent = 'An error occurred.';
+                });
+            }, 'image/png');
+        });
+    </script>
+</body>
+</html>
