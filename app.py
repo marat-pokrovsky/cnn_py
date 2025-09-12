@@ -84,5 +84,30 @@ def predict():
 def index():
     return render_template('index.html')
 
+@app.route('/game')
+def game():
+    return render_template('game.html')
+
+@app.route('/predict_game', methods=['POST'])
+def predict_game():
+    """
+    Prediction endpoint for the digit recognition game.
+    """
+    if 'file' not in request.files:
+        return jsonify({'error': 'no file provided'}), 400
+
+    file = request.files['file']
+    model_name = "mnist_model"
+    selected_model = models[model_name]
+
+    try:
+        image_bytes = file.read()
+        processed_image = preprocess_image(image_bytes, model_name)
+        prediction = selected_model.predict(processed_image)
+        predicted_class = np.argmax(prediction, axis=1)[0]
+        return jsonify({'predicted_class': int(predicted_class)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
