@@ -88,6 +88,10 @@ def index():
 def game():
     return render_template('game.html')
 
+@app.route('/game2')
+def game2():
+    return render_template('game2.html')
+
 @app.route('/predict_game', methods=['POST'])
 def predict_game():
     """
@@ -106,6 +110,32 @@ def predict_game():
         prediction = selected_model.predict(processed_image)
         predicted_class = np.argmax(prediction, axis=1)[0]
         return jsonify({'predicted_class': int(predicted_class)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/verify_digit', methods=['POST'])
+def verify_digit():
+    """
+    Verification endpoint for the digit drawing challenge.
+    """
+    if 'file' not in request.files or 'digit' not in request.form:
+        return jsonify({'error': 'file or digit not provided'}), 400
+
+    file = request.files['file']
+    target_digit = int(request.form['digit'])
+    model_name = "mnist_model"
+    selected_model = models[model_name]
+
+    try:
+        image_bytes = file.read()
+        processed_image = preprocess_image(image_bytes, model_name)
+        prediction = selected_model.predict(processed_image)
+        predicted_class = np.argmax(prediction, axis=1)[0]
+
+        if int(predicted_class) == target_digit:
+            return jsonify({'correct': True})
+        else:
+            return jsonify({'correct': False, 'predicted_class': int(predicted_class)})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
